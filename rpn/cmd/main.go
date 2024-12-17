@@ -1,176 +1,52 @@
-// package main
+package main
 
-// import (
-// 	"errors"
-// 	"fmt"
-// 	"strconv"
-// 	"strings"
-// )
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strconv"
+)
 
-// // Calc evaluates a mathematical expression given as a string.
-// func Calc(expression string) (float64, error) {
-// 	tokens := tokenize(expression)
-// 	postfix, err := infixToPostfix(tokens)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return evaluatePostfix(postfix)
-// }
+func run() error {
+	// Проверяем количество аргументов
+	if len(os.Args) != 4 {
+		return errors.New("usage: main <rows> <cols> <percent>")
+	}
 
-// // tokenize splits the expression into tokens.
-// func tokenize(expr string) []string {
-// 	var tokens []string
-// 	var currentToken strings.Builder
+	// Выводим аргументы для отладки
+	fmt.Println("Received arguments:", os.Args)
 
-// 	for _, char := range expr {
-// 		switch char {
-// 		case ' ':
-// 			continue
-// 		case '+', '-', '*', '/', '(', ')':
-// 			if currentToken.Len() > 0 {
-// 				tokens = append(tokens, currentToken.String())
-// 				currentToken.Reset()
-// 			}
-// 			tokens = append(tokens, string(char))
-// 		default:
-// 			currentToken.WriteRune(char)
-// 		}
-// 	}
+	// Считываем параметры из командной строки
+	rows, err := strconv.Atoi(os.Args[1])
+	if err != nil || rows <= 0 {
+		return errors.New("rows must be a positive integer")
+	}
 
-// 	if currentToken.Len() > 0 {
-// 		tokens = append(tokens, currentToken.String())
-// 	}
-// 	fmt.Println(expr)
-// 	fmt.Println(tokens)
-// 	return tokens
-// }
+	cols, err := strconv.Atoi(os.Args[2])
+	if err != nil || cols <= 0 {
+		return errors.New("cols must be a positive integer")
+	}
 
-// // infixToPostfix converts an infix expression to postfix notation using the Shunting Yard algorithm.
-// func infixToPostfix(tokens []string) ([]string, error) {
-// 	var output []string
-// 	var operators []string
+	percent, err := strconv.Atoi(os.Args[3])
+	if err != nil || percent < 0 || percent > 100 {
+		return errors.New("percent must be an integer between 0 and 100")
+	}
 
-// 	for _, token := range tokens {
-// 		if isNumber(token) {
-// 			output = append(output, token)
-// 		} else if token == "(" {
-// 			operators = append(operators, token)
-// 		} else if token == ")" {
-// 			for len(operators) > 0 && operators[len(operators)-1] != "(" {
-// 				output = append(output, operators[len(operators)-1])
-// 				operators = operators[:len(operators)-1]
-// 			}
-// 			if len(operators) == 0 {
-// 				return nil, errors.New("mismatched parentheses")
-// 			}
-// 			operators = operators[:len(operators)-1] // Pop the '('
-// 		} else if isOperator(token) {
-// 			for len(operators) > 0 && precedence(operators[len(operators)-1]) >= precedence(token) {
-// 				output = append(output, operators[len(operators)-1])
-// 				operators = operators[:len(operators)-1]
-// 			}
-// 			operators = append(operators, token)
-// 		} else {
-// 			return nil, fmt.Errorf("invalid character")
-// 		}
-// 	}
+	// Формируем строку для записи в файл
+	output := fmt.Sprintf("%dx%d %d%%", rows, cols, percent)
 
-// 	for len(operators) > 0 {
-// 		if operators[len(operators)-1] == "(" {
-// 			return nil, errors.New("mismatched parentheses")
-// 		}
-// 		output = append(output, operators[len(operators)-1])
-// 		operators = operators[:len(operators)-1]
-// 	}
-// 	fmt.Println(operators, "probel", output, "sdec")
-// 	return output, nil
-// }
+	// Записываем в файл config.txt
+	file, err := os.Create("config.txt")
+	if err != nil {
+		return fmt.Errorf("failed to create config.txt: %w", err)
+	}
+	defer file.Close()
 
-// // evaluatePostfix evaluates a postfix expression.
-// func evaluatePostfix(postfix []string) (float64, error) {
-// 	var stack []float64
+	_, err = file.WriteString(output)
+	if err != nil {
+		return fmt.Errorf("failed to write to config.txt: %w", err)
+	}
 
-// 	for _, token := range postfix {
-// 		if isNumber(token) {
-// 			num, _ := strconv.ParseFloat(token, 64)
-// 			stack = append(stack, num)
-// 		} else if isOperator(token) {
-// 			if len(stack) < 2 {
-// 				return 0, errors.New("invalid expression")
-// 			}
-// 			b := stack[len(stack)-1]
-// 			a := stack[len(stack)-2]
-// 			stack = stack[:len(stack)-2]
-
-// 			switch token {
-// 			case "+":
-// 				stack = append(stack, a+b)
-// 			case "-":
-// 				stack = append(stack, a-b)
-// 			case "*":
-// 				stack = append(stack, a*b)
-// 			case "/":
-// 				if b == 0 {
-// 					return 0, errors.New("division by zero")
-// 				}
-// 				stack = append(stack, a/b)
-// 			default:
-// 				return 0, fmt.Errorf("unknown operator: %s", token)
-// 			}
-// 		} else {
-// 			return 0, fmt.Errorf("invalid token: %s", token)
-// 		}
-// 	}
-
-// 	if len(stack) != 1 {
-// 		return 0, errors.New("invalid expression")
-// 	}
-
-// 	return stack[0], nil
-// }
-
-// // isNumber checks if a token is a number.
-// func isNumber(token string) bool {
-// 	if _, err := strconv.ParseFloat(token, 64); err == nil {
-// 		return true
-// 	}
-// 	return false
-// }
-
-// // isOperator checks if a token is an operator.
-// func isOperator(token string) bool {
-// 	return token == "+" || token == "-" || token == "*" || token == "/"
-// }
-
-// // precedence returns the precedence of an operator.
-// func precedence(op string) int {
-// 	switch op {
-// 	case "+", "-":
-// 		return 1
-// 	case "*", "/":
-// 		return 2
-// 	default:
-// 		return 0
-// 	}
-// }
-
-// func main() {
-// 	tests := []string{
-// 		"-5 + 3",            // -2
-// 		"3 + (-5)",          // -2
-// 		"2.5 * 4.2",         // 10.5
-// 		"5 + * 2",           // Ошибка: некорректная последовательность операторов
-// 		"5 / 0",             // Ошибка: деление на ноль
-// 		"3 + 4 * ( 5 - 2 )", // 15
-// 		"()",                // Ошибка: пустые скобки
-// 		"(3 + )",            // Ошибка: отсутствует операнд
-// 	}
-// 	for _, test := range tests {
-// 		result, err := Calc(test)
-// 		if err != nil {
-// 			fmt.Printf("Expression: %s, Error: %s\n", test, err)
-// 		} else {
-// 			fmt.Printf("Expression: %s, Result: %f\n", test, result)
-// 		}
-// 	}
-// }
+	fmt.Println("Configuration saved to config.txt")
+	return nil
+}

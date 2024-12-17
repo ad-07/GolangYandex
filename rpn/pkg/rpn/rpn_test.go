@@ -2,7 +2,8 @@ package rpn_test
 
 import (
 	"testing"
-	"github.com/aivanov/rpn/pkg"
+
+	"github.com/aivanov/rpn/rpn/pkg/rpn"
 )
 
 func TestCalc(t *testing.T) {
